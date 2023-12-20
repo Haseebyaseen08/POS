@@ -53,7 +53,6 @@
 
 
         function increaseQuantity(productId, price) {
-            debugger;
             var quantityField = document.getElementById('quantity_' + productId);
             var quantity = parseInt(quantityField.value);
             quantity += 1;
@@ -147,6 +146,11 @@
             var printWindow = window.open('', '_blank');
             printWindow.document.write(receiptContent);
             printWindow.document.close();
+            // Add an event listener for when the print window finishes printing or closes
+            printWindow.addEventListener('afterprint', function () {
+                // Refresh the parent window (your original window)
+                window.location.reload();
+            });
             printWindow.print();
         }
     </script>
