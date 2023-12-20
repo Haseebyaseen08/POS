@@ -83,8 +83,9 @@ namespace POS.Repositories.Implementation
             return response;
         }
 
-        public async Task<List<OrderProductModel>> Bill(List<OrderProductModel> model)
+        public async Task<OrderModel> Bill(List<OrderProductModel> model)
         {
+            OrderModel response = new OrderModel();
             for(int i = 0; i < model.Count; i++)
             {
                var obj = await _dataContext.Products.Where(x => x.Id == model[i].ProductId).FirstAsync();
@@ -114,7 +115,9 @@ namespace POS.Repositories.Implementation
 
             _dataContext.SaveChanges();
 
-            return model;
+            response.OrderProduct = model;
+            response.OrderId = order.Id;
+            return response;
         }
 
         public bool Delete(int id)

@@ -1,0 +1,25 @@
+﻿@model POS.Models.DTO.OrderDetailModel
+
+<h2>Order Details - ID: @Model.Order.Id</h2>
+
+<div class="table-responsive">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Quantity</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var detail in Model.Order.OrderDetails)
+            {
+                <tr>
+                    <td>@detail.ProductName</td>
+                    <td>@detail.Quantity</td>
+                    <td>@detail.UnitPrice</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -9,6 +9,17 @@ namespace POS.Repositories.Implementation
     public class OrderService (DataContext dataContext): IOrderService
     {
         private readonly DataContext _dataContext=dataContext;
+
+        public async Task<OrderDetailModel> OrderDetail(int id)
+        {
+            OrderDetailModel model = new OrderDetailModel();
+            model.Order = _dataContext.Orders
+             .Include(o => o.OrderDetails)
+             .FirstOrDefault(o => o.Id == id);
+
+            return model;
+        }
+
         public async Task<OrderListing> OrderListing(DateTime selectedDate)
         {
             // Get today's date

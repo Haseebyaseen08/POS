@@ -52,5 +52,12 @@ namespace POS.Controllers
             return View(orders);
         }
 
+        public async Task<IActionResult> OrderDetail(int orderId)
+        {
+            var order = await _orderService.OrderDetail(orderId);
+
+            return View(order);
+        }
+
     }
 }

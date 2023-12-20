@@ -10,7 +10,7 @@ namespace POS.Repositories.Abstract
 
         Task<DataStatus<ProductModel>> Update(ProductModel model);
 
-        Task<List<OrderProductModel>> Bill(List<OrderProductModel> model);
+        Task<OrderModel> Bill(List<OrderProductModel> model);
 
         bool Delete(int id);
     }

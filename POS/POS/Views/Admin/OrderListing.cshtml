@@ -32,7 +32,7 @@
                 <tr>
                     <td>@order.Id</td>
                     <td>@order.OrderDetails.Sum(od => od.Quantity * od.UnitPrice)</td>
-                    <td><a class="btn btn-primary" asp-controller="Order" asp-action="Details" asp-route-orderId="@order.Id">Details</a></td>
+                    <td><a class="btn btn-primary" asp-controller="Admin" asp-action="OrderDetail" asp-route-orderId="@order.Id">Details</a></td>
                 </tr>
             }
         </tbody>

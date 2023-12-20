@@ -20,14 +20,14 @@ namespace POS.Controllers
         {
             var response = await _productService.Bill(selectedProducts);
             decimal total = 0;
-            foreach(var product in response)
+            foreach(var product in response.OrderProduct)
             {
                 total = total + (product.UnitPrice??0) * product.Quantity;
             }
 
             //TempData["Bill"] = total;
 
-            return PartialView("_ReceiptPartial", new BillingDTO { Products=response, Bill=total});
+            return PartialView("_ReceiptPartial", new BillingDTO { Products=response.OrderProduct, Bill=total, OrderId=response.OrderId});
         }
     }
 }
