@@ -1,0 +1,65 @@
+﻿@model POS.Models.DTO.OrderListing;
+@{
+    decimal totalSell = (decimal)Model.TotalSellToday;
+    DateTime selectedDate = (DateTime)ViewData["SelectedDate"];
+}
+
+<div class="d-flex align-items-center mb-3">
+    <p class="me-3">Total Sell on @selectedDate.ToShortDateString():</p>
+    <h3>@totalSell.ToString("F2")</h3>
+</div>
+
+<div class="mb-3">
+    <label for="datepicker" class="form-label">Select Date:</label>
+    <div class="input-group">
+        <input type="text" class="form-control" id="datepicker" placeholder="Select date" value="@selectedDate.ToShortDateString()">
+        <button class="btn btn-primary" id="filterBtn">Filter</button>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Total Bill</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model.Orders)
+            {
+                <tr>
+                    <td>@order.Id</td>
+                    <td>@order.OrderDetails.Sum(od => od.Quantity * od.UnitPrice)</td>
+                    <td><a class="btn btn-primary" asp-controller="Order" asp-action="Details" asp-route-orderId="@order.Id">Details</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-datepicker@1.9.0/dist/js/bootstrap-datepicker.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-datepicker@1.9.0/dist/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+
+    <script>
+        $(document).ready(function () {
+
+            var selectedDate = '@((DateTime?)ViewData["SelectedDate"] ?? DateTime.Today).ToString("yyyy-MM-dd")';
+            $('#datepicker').datepicker({
+                format: 'yyyy-mm-dd',
+                autoclose: true,
+                startDate: new Date(1920, 0, 1), // Example start date, adjust as needed
+                endDate: new Date(), // Example end date, adjust as needed
+                defaultViewDate: selectedDate // Set default view date based on selected or current date
+            });
+
+            $('#filterBtn').click(function () {
+                var selectedDate = $('#datepicker').datepicker('getFormattedDate');
+                window.location.href = '@Url.Action("OrderListing", "Admin")?selectedDate=' + selectedDate;
+            });
+        });
+    </script>
+}

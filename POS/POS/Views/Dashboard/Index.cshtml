@@ -1,0 +1,336 @@
+﻿@model List<POS.Models.DTO.ProductModel>
+
+@{
+    ViewData["Title"] = "Products";
+}
+
+<div class="container mt-4">
+    <h2>Product List</h2>
+    @if (User.IsInRole("Manager"))
+    {
+        <div class="alert alert-success" id="successMessage" style="display: none;">
+            <!-- Message received from the controller will appear here -->
+        </div>
+        <div class="alert alert-danger" id="errorMessage" style="display: none;">
+            <!-- Message received from the controller for error -->
+        </div>
+        <div class="row justify-content-end">
+            <div class="col-auto">
+                <button type="button" class="btn btn-primary mt-3" id="openAddProductModalBtn">
+                    Add Product
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal for adding a new product -->
+        <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addProductModalLabel">Add Product</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addProductForm">
+                            <div class="mb-3">
+                                <label for="productName" class="form-label">Product Name</label>
+                                <input type="text" class="form-control" id="productName" name="Name" required>
+                                <div class="invalid-feedback">Please enter a name.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productPrice" class="form-label">Product Price</label>
+                                <input type="number" class="form-control" id="productPrice" name="Price" step=".01" required>
+                                <div class="invalid-feedback">Please enter a valid price greater than 0.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productType" class="form-label">Product Type</label>
+                                <select class="form-select" id="productType" name="ProductType" required>
+                                    <option value="">Select Product Type</option>
+                                    <option value="1">Food</option>
+                                    <option value="2">Beverages</option>
+                                    <option value="3">Sauce</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a product type.</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for updating a product -->
+        <div class="modal fade" id="updateProductModal" tabindex="-1" aria-labelledby="updateProductModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="updateProductModalLabel">Update Product</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="updateProductForm">
+                            <input type="hidden" id="updateProductId" name="Id">
+                            <div class="mb-3">
+                                <label for="updateProductName" class="form-label">Product Name</label>
+                                <input type="text" class="form-control" id="updateProductName" name="Name" required>
+                                <div class="invalid-feedback">Please enter a name.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="updateProductPrice" class="form-label">Product Price</label>
+                                <input type="number" class="form-control" id="updateProductPrice" name="Price" step=".01" required>
+                                <div class="invalid-feedback">Please enter a valid price greater than 0.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="updateProductType" class="form-label">Product Type</label>
+                                <select class="form-select" id="updateProductType" name="ProductType" required>
+                                    <option value="">Select Product Type</option>
+                                    <option value="1">Food</option>
+                                    <option value="2">Beverages</option>
+                                    <option value="3">Sauce</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a product type.</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <input type="text" id="searchInput" class="form-control mt-3" placeholder="Search">
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Product Type</th>
+                @if (User.IsInRole("Manager"))
+                {
+                    <th>Action</th>
+                }
+            </tr>
+        </thead>
+        <tbody id="productTable">
+            @foreach (var product in Model)
+            {
+                <tr>
+                    <td>@product.Id</td>
+                    <td>@product.Name</td>
+                    <td>Rs @product.Price.ToString("0.00")</td>
+                    <td>@product.ProductType</td>
+                    @if (User.IsInRole("Manager"))
+                    {
+                        <td>
+                            <button class="btn btn-primary btn-sm me-2" >
+                                Update
+                            </button>
+                            <button class="btn btn-danger btn-sm"  onclick="deleteProduct(@product.Id)">Delete</button> <!-- Delete button -->
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $("#searchInput").on("keyup", function () {
+                var value = $(this).val().toLowerCase();
+                $("#productTable tr").filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+
+            // Handling the button click event
+            $('#openAddProductModalBtn').click(function () {
+                // Open the modal
+                $('#addProductModal').modal('show');
+            });
+
+            // Submit form using AJAX when adding a new product
+            $("#addProductForm").submit(function (e) {
+                e.preventDefault();
+
+                var productName = $("#productName").val();
+                var productPrice = $("#productPrice").val();
+                var productType = $("#productType").val();
+
+                // Perform AJAX POST to add the product
+                $.ajax({
+                    url: '/Admin/CreateProduct', // Replace with your controller action for adding a product
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        Name: productName,
+                        Price: productPrice,
+                        ProductType: productType
+                    },
+                    success: function (data) {
+                        // Close the modal
+                        $('#addProductModal').modal('hide');
+
+                        if (data.status) {
+                            // Append the newly added product to the table
+                            var newRow = `<tr>
+                                        <td>${data.data.id}</td>
+                                        <td>${data.data.name}</td>
+                                        <td>Rs ${data.data.price.toFixed(2)}</td>
+                                        <td>${getProductTypeName(data.data.productType)}</td>
+                                        <td>
+                                        <button class="btn btn-primary btn-sm me-2" onclick="openProductModal(${data.data.Id}, '${data.data.name}', ${data.data.price.toFixed(2)}, '${getProductTypeName(data.data.productType)}', true)">
+                                            Update
+                                            </button>
+                                         <button class="btn btn-danger btn-sm"  onclick="deleteProduct(${data.data.Id})">Delete</button> 
+                                         </td>             
+                                        </tr>`;
+                            $('#productTable').append(newRow);
+
+                            $('#successMessage').text(data.message).fadeIn().delay(3000).fadeOut();
+                        }
+                        else{
+                            // Show error message received from controller
+                            $('#errorMessage').text(data.message).fadeIn().delay(3000).fadeOut();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // Close the modal
+                        $('#addProductModal').modal('hide');
+
+                        var errorMessage = xhr.responseJSON && xhr.responseJSON.ErrorMessage ? xhr.responseJSON.ErrorMessage : "An error occurred!";
+
+                        // Show error message received from controller
+                        $('#errorMessage').text(errorMessage).fadeIn().delay(3000).fadeOut();
+                    }
+                });
+            });
+        });
+
+        function getProductTypeName(productType) {
+            switch (productType) {
+                case 1:
+                    return "Food";
+                case 2:
+                    return "Beverages";
+                case 3:
+                    return "Sauce";
+                default:
+                    return "Unknown";
+            }
+        }
+
+        // Handling the update button click event for each product
+        $('#productTable').on('click', '.btn-primary', function () {
+            var $row = $(this).closest('tr');
+            var productId = $row.find('td:eq(0)').text();
+            var productName = $row.find('td:eq(1)').text();
+            var productPrice = $row.find('td:eq(2)').text().replace('Rs ', ''); // Remove 'Rs ' from price
+            var productType = $row.find('td:eq(3)').text();
+
+            // Pre-fill the update modal fields with the product details
+            $('#updateProductId').val(productId);
+            $('#updateProductName').val(productName);
+            $('#updateProductPrice').val(parseFloat(productPrice).toFixed(2)); // Convert to float and fix to 2 decimal places
+            //$('#updateProductType').val(productType);
+            $('#updateProductType option').filter(function () {
+                return $(this).text() === productType;
+            }).prop('selected', true);
+
+            // Open the update modal
+            $('#updateProductModal').modal('show');
+        });
+
+        // Submit form using AJAX when updating a product
+        $("#updateProductForm").submit(function (e) {
+            e.preventDefault();
+
+            var productId = $("#updateProductId").val();
+            var updatedProductName = $("#updateProductName").val();
+            var updatedProductPrice = $("#updateProductPrice").val();
+            var updatedProductType = $("#updateProductType").val();
+
+            // Perform AJAX POST to update the product
+            $.ajax({
+                url: '/Admin/UpdateProduct', // Replace with your controller action for updating a product
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    Id: productId,
+                    Name: updatedProductName,
+                    Price: updatedProductPrice,
+                    ProductType: updatedProductType
+                },
+                success: function (data) {
+                    // Close the modal
+                    $('#updateProductModal').modal('hide');
+
+                    if (data.status) {
+                        // Update the product details in the table
+                        var $rowToUpdate = $("#productTable").find("tr").filter(function () {
+                            return $(this).find("td:first").text() === productId;
+                        });
+
+                       
+                        $rowToUpdate.find("td:nth-child(2)").text(data.data.name);
+                        $rowToUpdate.find("td:nth-child(3)").text("Rs " + data.data.price.toFixed(2));
+                        $rowToUpdate.find("td:nth-child(4)").text(data.data.productType);
+
+
+                        $('#successMessage').text(data.message).fadeIn().delay(3000).fadeOut();
+                    } else {
+                        // Show error message received from controller
+                        $('#errorMessage').text(data.message).fadeIn().delay(3000).fadeOut();
+                    }
+                },
+                error: function (xhr, status, error) {
+                    // Close the modal
+                    $('#updateProductModal').modal('hide');
+
+                    var errorMessage = xhr.responseJSON && xhr.responseJSON.ErrorMessage ? xhr.responseJSON.ErrorMessage : "An error occurred!";
+
+                    // Show error message received from controller
+                    $('#errorMessage').text(errorMessage).fadeIn().delay(3000).fadeOut();
+                }
+            });
+        });
+
+        function deleteProduct(productId) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                $.ajax({
+                    url: '/Admin/DeleteProduct/' + productId, // Replace with your controller action for deleting a product
+                    type: 'DELETE',
+                    dataType: 'json',
+                    success: function (data) {
+                        // Handle success response if needed
+                        // For example, remove the deleted product from the UI
+                        if (data.status) {
+                            // Remove the row from the table upon successful deletion
+                            $('#productTable').find('tr').each(function () {
+                                if ($(this).find('td:first').text() === productId.toString()) {
+                                    $(this).remove();
+                                    return false; // Exit the loop after removing the row
+                                }
+                            });
+
+                            // Show success message or perform any other action
+                            $('#successMessage').text(data.message).fadeIn().delay(3000).fadeOut();
+                        } else {
+                            // Show error message received from controller
+                            $('#errorMessage').text(data.message).fadeIn().delay(3000).fadeOut();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle error response if needed
+                        // Show error message received from controller
+                        $('#errorMessage').text('Error occurred while deleting the product.').fadeIn().delay(3000).fadeOut();
+                    }
+                });
+            }
+        }
+
+
+    </script>
+}

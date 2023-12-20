@@ -1,0 +1,153 @@
+﻿@model List<POS.Models.DTO.ProductModel>
+
+<h2>Billing Screen</h2>
+
+<div class="input-group mb-3">
+    <input type="text" class="form-control" id="productSearch" onkeyup="searchProduct()" placeholder="Search for a product...">
+</div>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Unit Price</th>
+            <th>Quantity</th>
+            <th>Total Price</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var product in Model)
+        {
+            <tr>
+                <td>@product.Name</td>
+                <td>@product.Price</td>
+                <td>
+                    <div class="input-group">
+                        <span class="input-group-btn">
+                            <button class="btn btn-secondary" onclick="decreaseQuantity(@product.Id, @product.Price)">-</button>
+                        </span>
+                        <input type="text" class="form-control" id="quantity_@product.Id" value="0" readonly />
+                        <span class="input-group-btn">
+                            <button class="btn btn-secondary" onclick="increaseQuantity(@product.Id, @product.Price)">+</button>
+                        </span>
+                    </div>
+                </td>
+                <td>
+                    <span id="totalPrice_@product.Id">0</span>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div>
+    <h4>Total Bill: <span id="totalBill">0</span></h4>
+
+    <button class="btn btn-primary" onclick="submitOrder()">Print Receipt</button>
+</div>
+
+@section scripts {
+    <script src="/_framework/aspnetcore-browser-refresh.js"></script>
+    <script>
+
+        var selectedProducts = []; // Stores dynamically chosen quantities
+
+
+        function increaseQuantity(productId, price) {
+            debugger;
+            var quantityField = document.getElementById('quantity_' + productId);
+            var quantity = parseInt(quantityField.value);
+            quantity += 1;
+            quantityField.value = quantity;
+            if (quantity > 0) {
+                // Find existing product or add new one with quantity
+                var productIndex = selectedProducts.findIndex(p => p.ProductId === productId);
+                if (productIndex >= 0) {
+                    selectedProducts[productIndex].Quantity = quantity;
+                } 
+                else {
+                    selectedProducts.push({ ProductId: productId, Quantity: quantity });
+                }
+            }
+            updateTotalPrice(productId, price);
+            updateTotalBill();
+        }
+
+        function decreaseQuantity(productId, price) {
+            var quantityField = document.getElementById('quantity_' + productId);
+            var quantity = parseInt(quantityField.value);
+            if (quantity > 0) {
+                quantityField.value = quantity - 1;
+                var productIndex = selectedProducts.findIndex(p => p.ProductId === productId);
+                if (productIndex >= 0) {
+                    selectedProducts[productIndex].Quantity--;
+                }
+                updateTotalPrice(productId, price);
+                updateTotalBill();
+            }
+            else {
+                // Remove product from selected list if quantity drops to 0
+                selectedProducts = selectedProducts.filter(p => p.productId !== productId);
+            }
+        }
+
+        
+        function updateTotalPrice(productId, price) {
+            var quantity = parseInt(document.getElementById('quantity_' + productId).value);
+            var totalPrice = quantity * price;
+            document.getElementById('totalPrice_' + productId).innerText = totalPrice.toFixed(2);
+        }
+
+        function updateTotalBill() {
+            var totalBill = 0;
+            @foreach (var product in Model)
+            {
+                <text>totalBill += parseFloat(document.getElementById('totalPrice_@product.Id').innerText); </text>
+            }
+            document.getElementById('totalBill').innerText = totalBill.toFixed(2);
+        }
+
+        function searchProduct() {
+            var input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById("productSearch");
+            filter = input.value.toUpperCase();
+            table = document.querySelector(".table");
+            tr = table.getElementsByTagName("tr");
+
+            for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[0]; // Change the index if needed based on the column position
+                if (td) {
+                    txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+
+        function submitOrder() {
+            // Send selected products array to controller using AJAX
+            $.ajax({
+                url: "@Url.Action("ProcessOrder", "Billing")",
+                type: "POST",
+                data: { selectedProducts: selectedProducts },
+                success: function (data) {
+                    // Handle successful submission based on controller response
+                    printReceipt(data);
+                },
+                error: function (error) {
+                    // Handle potential error during submission
+                    console.log(error);
+                }
+            });
+        }
+
+        function printReceipt(receiptContent) {
+            var printWindow = window.open('', '_blank');
+            printWindow.document.write(receiptContent);
+            printWindow.document.close();
+            printWindow.print();
+        }
+    </script>
+}
